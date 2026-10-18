@@ -1,0 +1,58 @@
+### Works in VS Code (REST Client extension) and IntelliJ. Start the app first.
+@base = http://localhost:8080
+
+### Health
+GET {{base}}/health
+
+### Demo group (seeded on first start)
+GET {{base}}/groups/1
+
+### Who owes what
+GET {{base}}/groups/1/balances
+
+### Smart settle-up plan
+GET {{base}}/groups/1/settlements/suggested
+
+### Full history
+GET {{base}}/groups/1/ledger
+
+### Create a new group
+POST {{base}}/groups
+Content-Type: application/json
+
+{ "name": "Flatmates", "members": ["Zain", "Hira", "Bilal"] }
+
+### Add an expense (percentage split), safe to retry thanks to Idempotency-Key
+POST {{base}}/groups/1/expenses
+Content-Type: application/json
+Idempotency-Key: dinner-001
+
+{
+  "description": "Team dinner",
+  "amount": 4500.00,
+  "paidBy": 1,
+  "splitType": "PERCENTAGE",
+  "splits": [
+    { "memberId": 1, "value": 50 },
+    { "memberId": 2, "value": 25 },
+    { "memberId": 3, "value": 25 }
+  ]
+}
+
+### Deliberately invalid (percentages total 90): expect 422
+POST {{base}}/groups/1/expenses
+Content-Type: application/json
+
+{
+  "description": "Bad split",
+  "amount": 1000.00,
+  "paidBy": 1,
+  "splitType": "PERCENTAGE",
+  "splits": [ { "memberId": 1, "value": 50 }, { "memberId": 2, "value": 40 } ]
+}
+
+### Record a payment
+POST {{base}}/groups/1/settlements
+Content-Type: application/json
+
+{ "fromMemberId": 2, "toMemberId": 1, "amount": 1000.00 }
